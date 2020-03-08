@@ -10,6 +10,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -24,7 +25,11 @@ public class ConnectToServer extends AppCompatActivity {
     TextView txt;
     public Socket socket;
     public PrintWriter out;
-
+    public BufferedReader br;
+    public TextView response;
+    public String serverResponse;
+    public boolean FirstTime= true;
+    //public DataOutputStream dos;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +38,7 @@ public class ConnectToServer extends AppCompatActivity {
         Button button = findViewById(R.id.quit);
         Button button2 = findViewById(R.id.Connect);
         Button button3 = findViewById(R.id.Ping);
+        response = findViewById(R.id.response);
 
 
 
@@ -42,7 +48,7 @@ public class ConnectToServer extends AppCompatActivity {
             @Override
             public void onClick(View v) {
             isQuitting = true;
-            Quit();
+            //Quit();
 
             }
         });
@@ -51,6 +57,12 @@ public class ConnectToServer extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Connect();
+                if(FirstTime)
+                {
+                    waitForResponse();
+                    FirstTime = false;
+                }
+                //response.setText(serverResponse);
 
             }
         });
@@ -60,63 +72,183 @@ public class ConnectToServer extends AppCompatActivity {
             public void onClick(View v) {
                 Ping();
 
+                //Quit();
             }
         });
     }
 
 
     private void Quit(){
-        QuitAsyncTask asyncTask = new QuitAsyncTask();
-        asyncTask.execute();
+        QuitRunnable runnable = new QuitRunnable();
+        new Thread(runnable).start();
     }
 
     private void Connect(){
-        ConnectToServerAsyncTask asyncTask = new ConnectToServerAsyncTask();
-        asyncTask.execute();
+        ConnectToServerRunnable runnable = new ConnectToServerRunnable();
+        Thread tr = new Thread(runnable);
+        tr.start();
+        try {
+            tr.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
     }
 
     private void Ping(){
 
 
-        PingAsyncTask asyncTask = new PingAsyncTask();
-        asyncTask.execute();
+        PingRunnable runnable = new PingRunnable();
+        new Thread(runnable).start();
+    }
+
+    private void waitForResponse(){
+
+
+        WaitForResponseRunnable runnable = new WaitForResponseRunnable();
+        Thread tr= new Thread(runnable);
+        tr.start();
+
+
+
+
+    }
+
+    private void Displaytxt(String txt){
+        response.setText(txt);
     }
 
 
-    private class ConnectToServerAsyncTask extends AsyncTask<Void, Void, Void> {
+    class ConnectToServerRunnable implements  Runnable{
+
+        @Override
+        public void run() {
+
+            try {
+                socket = new Socket(SERVER_IP, SERVER_PORT);
+                br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                out = new PrintWriter(socket.getOutputStream(), true);
 
 
+                //serverResponse = br.readLine();
+
+
+                //String str = br.readLine();
+
+
+            }catch (IOException e){
+                e.printStackTrace();
+            }
+
+        }
+    }
+
+    class PingRunnable implements  Runnable{
+
+        @Override
+        public void run() {
+                out.write("Ping\n");
+
+                out.flush();
+                //out.flush();
+                //out.close();
+
+        }
+    }
+
+    class WaitForResponseRunnable implements  Runnable{
+
+        @Override
+        public void run() {
+
+
+
+                while(!isQuitting) {
+                    try {
+                        serverResponse = br.readLine();
+                        runOnUiThread(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                response.setText(serverResponse);
+                            }
+                        });
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+           /* try {
+
+
+
+                System.out.println(socket.getLocalPort());
+
+                //serverResponse = br.readLine();
+
+            }catch(IOException e){
+                e.printStackTrace();
+            }*/
+        }
+    }
+
+    class QuitRunnable implements  Runnable{
+
+        @Override
+        public void run() {
+
+            try {
+                //br.close();
+                socket.close();
+
+            }catch(IOException e){
+                e.printStackTrace();
+            }
+
+        }
+    }
+
+    /*private class ConnectToServerAsyncTask extends AsyncTask<Void, Void, Void> {
+
+        String serverResponse;
 
 
         @Override
         protected Void doInBackground(Void... voids) {
             //InputStream inputStream = null;
 
-            String serverResponse;
+
             try {
 
                 socket = new Socket(SERVER_IP, SERVER_PORT);
+                out = new PrintWriter(socket.getOutputStream(),true);
+                br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
 
-                    //out = new PrintWriter(socket.getOutputStream());
+                //System.out.println("> ");
+                //String command = keyboard.readLine();
+
+                //if(command.equals("quit")) break;
 
 
-                    //System.out.println("> ");
-                    //String command = keyboard.readLine();
 
-                    //if(command.equals("quit")) break;
+                // serverResponse = br.readLine();
 
 
-                    //out.println(command);
-                    //out.flush();
-                    //serverResponse = input.readLine();
-                    //System.out.println("Server says: " + serverResponse);
+
+
+                //out.println(command);
+                //out.flush();
+                //serverResponse = input.readLine();
+                //System.out.println("Server says: " + serverResponse);
                     /*if( !serverResponse.isEmpty())
                     {
                         System.out.println("Server says: " + serverResponse);
-                    }*/
-                    //socket.close();
-                    //System.exit(0);
+                    }
+                //socket.close();
+                //System.exit(0);
 
 
 
@@ -146,80 +278,33 @@ public class ConnectToServer extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
+            //response.setText(serverResponse);
+
 
         }
 
 
     }
 
-    void DisplayText(String message){
-        DisplayMessageAsyncTask asyncTask = new DisplayMessageAsyncTask(message);
-        asyncTask.execute();
 
+    private class WaitForResponseAsyncTask extends AsyncTask<Void, Void, Void> {
 
-    }
-
-
-    private class PingAsyncTask extends AsyncTask<Void, Void, Void> {
-
-
-
+        String serverResponse;
 
         @Override
         protected Void doInBackground(Void... voids) {
-            //InputStream inputStream = null;
 
-            String serverResponse;
             try {
 
-                //Socket socket = new Socket(SERVER_IP, SERVER_PORT);
-
-                BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                //BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
-                //PrintWriter out = new PrintWriter(socket.getOutputStream());
-                out = new PrintWriter(socket.getOutputStream());
-                out.write("Ping");
-                out.flush();
-                out.close();
 
 
-
-                //BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                while(true) {
-
-                    serverResponse = input.readLine();
-                    boolean atleastOneAlpha = serverResponse.matches(".*[a-zA-Z]+.*");
-                    //System.out.println("Server says: " + serverResponse);
-                    if (isQuitting) break;
-
-                    if (atleastOneAlpha) {
-
-                        System.out.println("Server says: " + serverResponse);
-                    }
-                    //System.out.println("> ");
-                    //String command = keyboard.readLine();
-
-                    //if(command.equals("quit")) break;
-
-
-                    //out.println(command);
-                    //out.flush();
-
-                }
-
-                input.close();
-
-
-            } catch (IOException e) {
+                serverResponse = br.readLine();
+            }catch(IOException e){
                 e.printStackTrace();
             }
 
 
 
-            //adapter.notifyDataSetChanged();
-            // stop animating Shimmer and hide the layout
-            // mShimmerViewContainer.stopShimmer();
-            //mShimmerViewContainer.setVisibility(View.GONE);
 
 
             return null;
@@ -233,12 +318,63 @@ public class ConnectToServer extends AppCompatActivity {
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
 
+            response.setText(serverResponse);
+
         }
 
 
     }
 
-    private class DisplayMessageAsyncTask extends AsyncTask<Void, Void, Void> {
+    /*void DisplayText(String message){
+        DisplayMessageAsyncTask asyncTask = new DisplayMessageAsyncTask(message);
+        asyncTask.execute();
+
+
+    }
+
+
+    private class PingAsyncTask extends AsyncTask<Void, Void, Void> {
+
+        String serverResponse;
+
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            //InputStream inputStream = null;
+            out.write("Ping");
+            //out.flush();
+            out.flush();
+            //out.close();
+            /*try {
+
+
+
+                serverResponse = br.readLine();
+            }catch(IOException e){
+                e.printStackTrace();
+            }
+
+
+
+            return null;
+        }
+
+
+
+
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+
+
+
+        }
+
+
+    }
+
+    /*private class DisplayMessageAsyncTask extends AsyncTask<Void, Void, Void> {
         String message;
 
 
@@ -300,5 +436,5 @@ public class ConnectToServer extends AppCompatActivity {
 
     }
 
-
+*/
 }
