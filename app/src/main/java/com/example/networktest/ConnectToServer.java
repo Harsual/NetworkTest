@@ -2,6 +2,7 @@ package com.example.networktest;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
@@ -18,7 +19,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 public class ConnectToServer extends AppCompatActivity {
-    private static final String SERVER_IP = "192.168.1.37";
+
     private static final int SERVER_PORT = 9090;
     public static boolean isQuitting = false;
     //public AsyncTask asyncTask;
@@ -30,6 +31,12 @@ public class ConnectToServer extends AppCompatActivity {
     public String serverResponse;
     public boolean FirstTime= true;
     //public DataOutputStream dos;
+    public String SERVER_IP;
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Quit();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +46,10 @@ public class ConnectToServer extends AppCompatActivity {
         Button button2 = findViewById(R.id.Connect);
         Button button3 = findViewById(R.id.Ping);
         response = findViewById(R.id.response);
+
+
+        Intent intent = getIntent();
+        SERVER_IP = intent.getStringExtra("IP");
 
 
 
@@ -198,7 +209,11 @@ public class ConnectToServer extends AppCompatActivity {
         public void run() {
 
             try {
-                //br.close();
+                out.write("quit\n");
+
+                out.flush();
+                out.close();
+                br.close();
                 socket.close();
 
             }catch(IOException e){

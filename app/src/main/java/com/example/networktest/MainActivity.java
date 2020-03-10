@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 //import java.net.InetAddress;
@@ -23,6 +24,8 @@ public class MainActivity extends AppCompatActivity {
 
 
         final Button btn = findViewById(R.id.Start);
+        final EditText edt = findViewById(R.id.editText);
+
 
 
 
@@ -30,14 +33,17 @@ public class MainActivity extends AppCompatActivity {
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                openActivity2();
+
+                String str = edt.getText().toString();
+                openActivity2(str);
 
             }
         });
     }
 
-    void openActivity2(){
+    void openActivity2(String s){
         Intent intent = new Intent(this, ConnectToServer.class);
+        intent.putExtra("IP",s);
         startActivity(intent);
 
     }
