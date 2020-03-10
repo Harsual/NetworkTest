@@ -115,9 +115,7 @@ public class ConnectToServer extends AppCompatActivity {
 
     }
 
-    private void Displaytxt(String txt){
-        response.setText(txt);
-    }
+
 
 
     class ConnectToServerRunnable implements  Runnable{
